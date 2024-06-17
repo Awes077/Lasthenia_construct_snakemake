@@ -103,23 +103,6 @@ admix_over_reps <- function(path, k, n_reps, ind_file){
     ad_prop_1 <- as.data.frame(ad_ref[inds_for_filter,])
   }
 
-  #convert to data frame
-  # ad_ref <- conStruct.results[[1]]$MAP$admix.proportions
-  # ndat <- nrow(conStruct.results[[1]]$MAP$admix.proportions)
-  # ndiff <- ninds - num_miss
-  # print(ndiff)
-  # print(ndat)
-  # if(ndat>ndiff){
-  # 
-  #   ad_ref <- conStruct.results[[1]]$MAP$admix.proportions[-miss,]
-  #   ad_prop_1 <- as.data.frame(conStruct.results[[1]]$MAP$admix.proportions[-miss,])
-  # 
-  # }else{
-  #   tmp_ad <- conStruct.results[[1]]$MAP$admix.proportions
-  #   rownames(tmp_ad) <-
-  #   ad_prop_1 <- as.data.frame(conStruct.results[[1]]$MAP$admix.proportions)
-  # }
-  # 
   #construct column names
   new_names <- rep('pop',k)
   new_nam <- paste0(new_names, c(1:k))
