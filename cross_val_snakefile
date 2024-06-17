@@ -1,0 +1,77 @@
+missing_vals = ['1','0.8','0.6','0.4']
+job_name = ['bi_las']
+
+rule all:
+    input:
+        expand('output/miss_{missing}/cross_val/miss_{missing}_{job}_nsp_xval_results.txt', missing=missing_vals, job=job_name)
+
+
+rule bi_allele_filter:
+    input:
+        'high_cov_both_lanes.vcf'
+    output:
+        '{job}_t.recode.vcf'
+    threads:1 
+    resources:
+        runtime='24h'
+    shell:
+        """
+        cd /scratch/alpine/aawe2235/Lasthenia_genomics/for_construct
+        eval "$(micromamba shell hook --shell bash)"
+        micromamba activate R_env
+        vcftools --vcf {input} --min-alleles 2 --max-alleles 2 --recode --recode-INFO-all --out {wildcards.job}_t
+        """
+
+rule filter_vcf:
+    input:
+        '{job}_t.recode.vcf'
+    output:
+        'output/miss_{missing}/miss_{missing}_{job}.recode.vcf'
+    threads: 1
+    resources:
+        runtime='24h'
+    shell:
+        """
+        cd /scratch/alpine/aawe2235/Lasthenia_genomics/for_construct
+        eval "$(micromamba shell hook --shell bash)"
+        micromamba activate R_env
+        vcftools --vcf {input} --max-missing {wildcards.missing} --recode --recode-INFO-all --out output/miss_{wildcards.missing}/miss_{wildcards.missing}_{wildcards.job}
+        """
+
+rule convert_vcf:
+    input:
+        'output/miss_{missing}/miss_{missing}_{job}.recode.vcf'
+    output:
+        'output/miss_{missing}/miss_{missing}_{job}.rds'
+    threads: 1
+    resources:
+        runtime='24h'
+    shell:
+        """
+        cd /scratch/alpine/aawe2235/Lasthenia_genomics/for_construct
+        eval "$(micromamba shell hook --shell bash)"
+        micromamba activate R_env
+        Rscript vcf_to_construct_alp.R {input} {output}
+        """
+
+rule run_construct:
+    input:
+        freqs= 'output/miss_{missing}/miss_{missing}_{job}.rds',
+        coords='coords.csv'
+
+    output:
+        'output/miss_{missing}/cross_val/miss_{missing}_{job}_nsp_xval_results.txt'
+    threads: 8
+    log: 'output/cross_val_miss_{missing}_{job}_log_stderr.txt'
+    params:
+        k_val=7
+    resources:
+        runtime='24h',
+        mem_gb=300
+    shell:
+        """
+        cd /scratch/alpine/aawe2235/Lasthenia_genomics/for_construct
+        eval "$(micromamba shell hook --shell bash)"
+        micromamba activate R_env
+        Rscript Run_construct_xval_alp.R {input.freqs} {input.coords} {params.k_val} {wildcards.job} 2> {log}
+        """
